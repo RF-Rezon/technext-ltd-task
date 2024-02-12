@@ -5,55 +5,106 @@ import { Link } from "react-router-dom";
 
 const UsersPage = () => {
   const [users, setUsers] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [showErros, setShowErrors] = useState(false);
+  const [sortBy, setSortBy] = useState(''); // Add state for sorting option
+  const { register, handleSubmit, reset } = useForm();
+
 
   useEffect(() => {
+    const storedUsers = localStorage.getItem('users');
+    if (storedUsers) {
+      setUsers(JSON.parse(storedUsers));
+    } else {
     fetch("https://dummyjson.com/users")
       .then((data) => data.json())
-      .then((finalData) => setUsers(finalData));
+      .then((finalData) => setUsers(finalData.users));
+      }
   }, []);
 
-  console.log(users.users);
 
-  const { register, handleSubmit, reset } = useForm();
-  const onSubmit = (data) => {
-    console.log(data), reset();
+  const handleInputChange =(e)=> {
+    setSearchQuery(e.target.value);
+  }
+
+  const handleSearch = () => {
+    // Perform search operation here, for now just log the search query
+    console.log('Performing search for:', searchQuery);
+
+    if (!searchQuery) {
+      setShowErrors(true);
+      return;
+    }
+
+    const searchedUsers =  users?.filter(user => user.username.toLowerCase().includes(searchQuery.toLowerCase()));
+    if(searchedUsers.length === 0) {
+       setShowErrors(true)
+    }else{
+      setShowErrors(false)
+    }
+    setUsers(searchedUsers)
+  
   };
 
-//   const handleDetails =(id)=> {
-//     const { history } = this.props;
-//     history.push(`/your-route/${id}`);
-//   }
+  const handleSortChange = (e) => {
+    setSortBy(e.target.value);
+    setShowErrors(false); // Reset errors when changing sorting option
+
+    let sortedUsers = [...users]; // Copy current users array to not mutate state directly
+
+    if (e.target.value === 'name') {
+      sortedUsers.sort((a, b) => a.username.localeCompare(b.username));
+    } else if (e.target.value === 'email') {
+      sortedUsers.sort((a, b) => a.email.localeCompare(b.email));
+    } else if (e.target.value === 'company') {
+      sortedUsers.sort((a, b) => a.company.name.localeCompare(b.company.name));
+    }
+
+    setUsers(sortedUsers);
+  };
+
+
+  const onSubmit = (data) => {
+    const newUserId = users.length > 0 ? users[users.length - 1].id + 1 : 1;
+    const newUser = { id: newUserId, ...data };
+    const updatedUsers = [...users, newUser]; // Create a new array with the new user added
+    setUsers(updatedUsers);
+    localStorage.setItem('users', JSON.stringify(updatedUsers)); // Update local storage with the updated users array
+    reset();
+    document.location.href = '/'; // Redirect to the home page
+  };
+
 
   return (
     <>
       <div className="w-full h-full bg-white">
-        <div className="h-20 w-full flex items-center justify-center space-x-6 bg-sky-100">
+        <div className="h-20 w-full flex items-center justify-center space-x-3 md:space-x-6 bg-sky-100 px-4">
           <div id="search_box">
             <div className="relative">
               <input
                 type="text"
-                placeholder="Search By Dua Name"
+                placeholder="Search By Username"
                 className="px-4 py-3 rounded-md text-sm font-medium outline-none border-none focus:outline-sky-300 focus:outline-2 bg-white"
+                value={searchQuery}
+                onChange={handleInputChange}
               />
-              <div className="absolute my-1 mr-1 bottom-0 h-auto top-0 right-0 bg-white w-[17%] flex items-center justify-center rounded-md cursor-pointer">
-                <CiSearch fill="gray" className="w-5 h-5" />
+              <div className="absolute border-l border-l-gray-500 my-1 mr-1 bottom-0 h-auto top-0 right-0 bg-white w-[17%] flex items-center justify-center rounded-md cursor-pointer">
+                <CiSearch fill="gray" onClick={handleSearch} className="w-5 h-5" />
               </div>
             </div>
           </div>
           <div id="selection">
-            <select
-              name="HeadlineAct"
-              id="HeadlineAct"
-              className="px-3 py-[11px] w-full rounded-md border-gray-300 text-sm font-medium text-gray-700 outline-none border-none"
+          <select
+              name="sortSelect"
+              id="sortSelect"
+              className="px-3 py-[11px] w-full rounded-md bg-white text-sm font-medium text-gray-700 outline-none border-none"
+              value={sortBy}
+              onChange={handleSortChange}
             >
-              <option value="">Please Select</option>
-              <option value="JM">John Mayer</option>
-              <option value="SRV">Stevie Ray Vaughn</option>
-              <option value="JH">Jimi Hendrix</option>
-              <option value="BBK">B.B King</option>
-              <option value="AK">Albert King</option>
-              <option value="BG">Buddy Guy</option>
-              <option value="EC">Eric Clapton</option>
+              <option value="">Sort By</option>
+              <option value="name">User Name</option>
+              <option value="email">Email</option>
+              <option value="company">Company Name</option>
             </select>
           </div>
 
@@ -65,36 +116,23 @@ const UsersPage = () => {
               <p className="text-sm font-medium">Add User</p>
             </button>
             <dialog id="my_modal_4" className="modal">
-              <div className="modal-box w-11/12 max-w-full">
+              <div className="modal-box w-11/12 max-w-full pb-10">
                 {/* //////////////////////// */}
 
-                <div className="flex items-center justify-between space-x-4">
-                  <div className="md:basis-2/5 px-6 h-full">
-                    <div className="mt-48 md:mt-0">
+                <div className="flex items-center justify-center">
+                  <div className="w-[80%] px-6 h-full">
+                    <div className="mt-12 md:mt-0">
                       <div className="border-b-black border-b-[3px] pb-6 flex items-center justify-center my-10">
                         <div className="text-3xl font-semibold">
                           <p>Add User Form</p>
                         </div>
                       </div>
                       <form onSubmit={handleSubmit(onSubmit)}>
-                        {/* <p className="py-5 font-semibold text-gray-800 text-base">
-                                Class Name
-                              </p>
-                              <div className="relative z-0 w-full mb-6 group">
-                                <select {...register("c_name")} className="select select-info w-full max-w-xs text-gray-800">
-                                  <option className="text-gray-800" value="Piano Prowess: Keys to Excellence">Piano</option>
-                                  <option className="text-gray-800" value="Guitar Mastery: Fretboard Fundamentals ">Guiter</option>
-                                  <option className="text-gray-800" value="Violin Virtuosity: Bow to Strings">Violin</option>
-                                  <option className="text-gray-800" value="Drum Dynamics: Rhythm Revolution">Drums</option>
-                                  <option className="text-gray-800" value="Bass Groove: Low-End Explorations">Bass</option>
-                                  <option className="text-gray-800" value="Saxophone Serenade: Wind Harmony">Saxophone</option>
-                                </select>
-                              </div> */}
+              
                         <div className="relative z-0 w-full mb-6 group">
                           <input
                             {...register("image")}
                             type="url"
-                            id="floating_repeat_password"
                             className="block py-2.5 px-0 w-full text-sm font-medium text-gray-800 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-black dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
                             required
                           />
@@ -109,7 +147,6 @@ const UsersPage = () => {
                           <input
                             {...register("username")}
                             type="text"
-                            id="floating_repeat_password"
                             className="block py-2.5 px-0 w-full text-sm font-medium text-gray-800 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-black dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
                             //   value={user?.displayName || ""}
                           />
@@ -124,7 +161,6 @@ const UsersPage = () => {
                           <input
                             {...register("firstName")}
                             type="text"
-                            id="floating_repeat_password"
                             className="block py-2.5 px-0 w-full text-sm font-medium text-gray-800 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-black dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
                             //   value={user?.displayName || ""}
                           />
@@ -139,7 +175,6 @@ const UsersPage = () => {
                           <input
                             {...register("lastName")}
                             type="text"
-                            id="floating_repeat_password"
                             className="block py-2.5 px-0 w-full text-sm font-medium text-gray-800 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-black dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
                             //   value={user?.displayName || ""}
                           />
@@ -154,7 +189,6 @@ const UsersPage = () => {
                           <input
                             {...register("email")}
                             type="email"
-                            id="floating_repeat_password"
                             className="block py-2.5 px-0 w-full text-sm font-medium text-gray-800 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-black dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
                             //   value={user?.email || ""}
                           />
@@ -230,7 +264,7 @@ const UsersPage = () => {
                         <div className="relative z-0 w-full group my-6">
                           <input
                             {...register("c_name")}
-                            type="number"
+                            type="text"
                             id="floating_first_name"
                             className="block py-2.5 px-0 w-full text-sm font-medium text-gray-800 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-black dark:border-gray-600 dark:focus:border-blue-500 focus:outline-none focus:ring-0 focus:border-blue-600 peer"
                             required
@@ -242,23 +276,14 @@ const UsersPage = () => {
                             Company Name
                           </label>
                         </div>
-                        <input
-                          type="submit"
-                          className="bg-sky-200 hover:bg-sky-300 active:border active:border-sky-400 transition-all rounded-md px-5 py-2.5 text-sm font-medium shadow cursor-pointer mt-5"
-                          value="Add User"
-                        />
+                        <div>
+                          <input
+                            type="submit"
+                            className="bg-sky-200 hover:bg-sky-300 active:border active:border-sky-400 transition-all rounded-md px-5 py-2.5 text-sm font-medium shadow cursor-pointer mt-5"
+                            value="Add User"
+                          />
+                        </div>
                       </form>
-                    </div>
-                  </div>
-                  <div className="md:basis-3/5 h-full">
-                    <div className="grid grid-cols-5 gap-5">
-                      {users?.users?.slice(0, 20).map((each) => (
-                        <img
-                          className="w-24 place-self-center"
-                          src={each.image}
-                          key={each.id}
-                        />
-                      ))}
                     </div>
                   </div>
                 </div>
@@ -275,21 +300,21 @@ const UsersPage = () => {
           </div>
         </div>
         <div className="max-w-[1600px] mx-auto min-h-screen p-6 py-12">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-            {users?.users?.map((each) => (
-              <article key={each.id} className="relative shadow-lg">
-                <img
+          {showErros ? (<div><p className="text-2xl text-red-400 font-medium text-center">Not match anything!. Please try again.</p></div>) : (<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+            {users?.map((each) => (
+              <article  key={each.id} className="relative shadow-lg rounded-lg hover:rounded-3xl">
+                <img data-aos="fade-up" data-aos-duration="4000"
                   src={each.image}
                   className="absolute object-contain h-full w-full"
                 />
 
-                <div className="relative pt-32 sm:pt-48 lg:pt-64 bg-black bg-opacity-20 hover:bg-opacity-95 transition-all duration-300 rounded-lg hover:rounded-3xl">
+                <div className="relative h-full pt-32 sm:pt-48 lg:pt-64 bg-black bg-opacity-20 hover:bg-opacity-95 transition-all duration-300 rounded-lg hover:rounded-3xl hover:scale-105">
                   <div className="p-4 sm:p-6">
                     <p className="block text-xs font-medium text-white/90 cursor-default">
                       {each.email}
                     </p>
 
-                    <p to="#">
+                    <p>
                       <h3 className="mt-0.5 text-lg text-white font-semibold cursor-default">
                         {each.firstName} {each.lastName}
                       </h3>
@@ -307,7 +332,7 @@ const UsersPage = () => {
                               Company Name
                             </p>
                               <p className="mt-2 line-clamp-3 text-sm/relaxed text-white/95 font-medium cursor-default">
-                                {each?.company?.name}
+                                {each?.company?.name}{each?.c_name} 
                               </p>
                         
                         </div>
@@ -324,7 +349,7 @@ const UsersPage = () => {
                 </div>
               </article>
             ))}
-          </div>
+          </div>)}
         </div>
       </div>
     </>

@@ -19,9 +19,9 @@ const SingleUser = () => {
       <p className="text-3xl font-semibold text-center">
         {user?.username} Details
       </p>
-      <div className="p-10 flex items-center justify-center ">
-        <div className="bg-base-100 shadow-xl w-full min-h-[800px] flex flex-col md:flex-row items-center rounded-lg space-x-14 pr-12 pb-10 md:pb-0">
-          <div className="md:w-[40%] w-[1/2] m-6 md:m-0 flex items-center justify-center">
+      <div className="p-8 flex items-center justify-center">
+        <div className="bg-base-100 shadow-xl w-[80%] min-h-[800px] flex flex-col md:flex-row items-center rounded-lg space-x-14 pr-12 pl-0 md:pl-12 pb-10 md:pb-0">
+          <div className="md:w-[40%] border-[6px] p-10 w-[1/2] md:m-0 flex items-center justify-center rounded-lg border-blue-300 m-6 ">
             <img className="h-full w-full object-cover" src={user?.image} />
           </div>
           <div className="md:w-[60%] w-[90%]">
